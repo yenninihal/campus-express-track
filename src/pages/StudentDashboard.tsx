@@ -55,22 +55,42 @@ const StudentDashboard = () => {
     }
   }, [navigate]);
 
-  // Simulate bus movement
+  // Poll driver's live location from localStorage (shared by driver device)
   useEffect(() => {
-    if (!bus) return;
+    if (!route) return;
     const interval = setInterval(() => {
-      setBus((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          currentLat: prev.currentLat + (Math.random() * 0.002 - 0.001),
-          currentLng: prev.currentLng + (Math.random() * 0.002 - 0.001),
-          speed: 25 + Math.floor(Math.random() * 25),
-        };
-      });
-    }, 5000);
+      const driverData = localStorage.getItem(`driver-location-${route.id}`);
+      if (driverData) {
+        const loc = JSON.parse(driverData);
+        setBus((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            currentLat: loc.lat,
+            currentLng: loc.lng,
+            speed: loc.speed || 0,
+            status: loc.status || "en-route",
+          };
+        });
+        // Recalculate ETA and distance to nearest stop
+        if (route.stops.length > 0) {
+          let minDist = Infinity;
+          let nearestStop = route.stops[0];
+          route.stops.forEach((stop) => {
+            const d = calculateDistance(loc.lat, loc.lng, stop.lat, stop.lng);
+            if (d < minDist) {
+              minDist = d;
+              nearestStop = stop;
+            }
+          });
+          setNextStopName(nearestStop.name);
+          setEta(calculateETA({ ...bus!, currentLat: loc.lat, currentLng: loc.lng, speed: loc.speed || 30 }, nearestStop.lat, nearestStop.lng));
+          setDistance(parseFloat(minDist.toFixed(1)));
+        }
+      }
+    }, 3000);
     return () => clearInterval(interval);
-  }, [bus]);
+  }, [route, bus]);
 
   const handleLogout = () => {
     localStorage.removeItem("student");

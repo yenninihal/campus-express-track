@@ -22,21 +22,42 @@ const DriverDashboard = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setSpeed(Math.round((pos.coords.speed || 0) * 3.6));
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const spd = Math.round((pos.coords.speed || 0) * 3.6);
+        setLocation(loc);
+        setSpeed(spd);
+        // Broadcast location for student dashboard
+        if (selectedRoute) {
+          localStorage.setItem(`driver-location-${selectedRoute.id}`, JSON.stringify({
+            lat: loc.lat,
+            lng: loc.lng,
+            speed: spd,
+            status: "en-route",
+            timestamp: Date.now(),
+          }));
+        }
       },
       () => {
-        // Fallback for demo
-        if (selectedRoute) {
-          setLocation({
-            lat: selectedRoute.stops[0].lat + (Math.random() * 0.01),
-            lng: selectedRoute.stops[0].lng + (Math.random() * 0.01),
-          });
-          setSpeed(30 + Math.floor(Math.random() * 20));
+        // Fallback: use route start as static position (no random drift)
+        if (selectedRoute && !location) {
+          const loc = {
+            lat: selectedRoute.stops[0].lat,
+            lng: selectedRoute.stops[0].lng,
+          };
+          setLocation(loc);
+          setSpeed(0);
+          localStorage.setItem(`driver-location-${selectedRoute.id}`, JSON.stringify({
+            lat: loc.lat,
+            lng: loc.lng,
+            speed: 0,
+            status: "en-route",
+            timestamp: Date.now(),
+          }));
         }
-      }
+      },
+      { enableHighAccuracy: true }
     );
-  }, [selectedRoute]);
+  }, [selectedRoute, location]);
 
   useEffect(() => {
     if (tripStatus !== "active") return;
@@ -59,6 +80,17 @@ const DriverDashboard = () => {
     setTripStatus("active");
     setElapsed(0);
     toast({ title: "Trip Started", description: `Route: ${selectedRoute.name}` });
+  };
+
+  const handleEndTrip = () => {
+    if (selectedRoute) {
+      localStorage.removeItem(`driver-location-${selectedRoute.id}`);
+    }
+    setTripStatus("idle");
+    setLocation(null);
+    setSpeed(0);
+    setElapsed(0);
+    toast({ title: "Trip Ended" });
   };
 
   const formatTime = (s: number) => {
@@ -136,7 +168,7 @@ const DriverDashboard = () => {
                   <Pause className="w-5 h-5 mr-2" />
                   Pause
                 </Button>
-                <Button onClick={() => { setTripStatus("idle"); toast({ title: "Trip Ended" }); }} variant="outline" className="flex-1 h-14 border-destructive text-destructive hover:bg-destructive/10">
+                <Button onClick={handleEndTrip} variant="outline" className="flex-1 h-14 border-destructive text-destructive hover:bg-destructive/10">
                   <Square className="w-5 h-5 mr-2" />
                   End Trip
                 </Button>
@@ -148,7 +180,7 @@ const DriverDashboard = () => {
                   <Play className="w-5 h-5 mr-2" />
                   Resume
                 </Button>
-                <Button onClick={() => { setTripStatus("idle"); toast({ title: "Trip Ended" }); }} variant="outline" className="flex-1 h-14 border-destructive text-destructive hover:bg-destructive/10">
+                <Button onClick={handleEndTrip} variant="outline" className="flex-1 h-14 border-destructive text-destructive hover:bg-destructive/10">
                   <Square className="w-5 h-5 mr-2" />
                   End
                 </Button>
