@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import aitamLogo from "@/assets/aitam-logo.png";
 import { Bus, Clock, MapPin, Navigation, LogOut, Wifi, Route as RouteIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BusMap from "@/components/BusMap";
@@ -77,11 +78,9 @@ const StudentDashboard = () => {
       <header className="gradient-primary sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary-foreground/20 rounded-xl flex items-center justify-center">
-              <Bus className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src={aitamLogo} alt="AITAM Logo" className="w-9 h-9 object-contain rounded-lg bg-primary-foreground/20 p-0.5" />
             <div>
-              <h1 className="font-display font-bold text-primary-foreground text-sm">Bus Tracker</h1>
+              <h1 className="font-display font-bold text-primary-foreground text-sm">AITAM Bus Tracker</h1>
               <p className="text-primary-foreground/70 text-xs">{student.name}</p>
             </div>
           </div>
