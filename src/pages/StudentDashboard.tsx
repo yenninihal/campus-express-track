@@ -171,7 +171,7 @@ const StudentDashboard = () => {
                 ))}
                 <div className="flex items-start gap-3">
                   <div className="w-3 h-3 rounded-full bg-primary border-2 border-card" />
-                  <p className="text-sm font-semibold text-primary">Aditya Engineering College</p>
+                  <p className="text-sm font-semibold text-primary">AITAM College</p>
                 </div>
               </div>
             </div>

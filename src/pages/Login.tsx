@@ -63,7 +63,7 @@ const Login = () => {
               <Bus className="w-8 h-8 text-primary-foreground" />
             </motion.div>
             <h1 className="text-2xl font-bold font-display text-foreground">College Bus Tracker</h1>
-            <p className="text-muted-foreground text-sm">Aditya Engineering College, Tekkali</p>
+            <p className="text-muted-foreground text-sm">AITAM College, Tekkali</p>
           </div>
 
           {/* Student Login */}
