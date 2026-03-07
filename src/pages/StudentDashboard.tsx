@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import aitamLogo from "@/assets/aitam-logo.png";
-import { Bus, Clock, MapPin, Navigation, LogOut, Wifi, Route as RouteIcon } from "lucide-react";
+import { Bus, Clock, MapPin, Navigation, LogOut, Wifi, Route as RouteIcon, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BusMap from "@/components/BusMap";
 import {
@@ -23,6 +23,7 @@ const StudentDashboard = () => {
   const [eta, setEta] = useState(0);
   const [distance, setDistance] = useState(0);
   const [nextStopName, setNextStopName] = useState("");
+  const [mapFullscreen, setMapFullscreen] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("student");
@@ -147,11 +148,34 @@ const StudentDashboard = () => {
         </div>
 
         {/* Map */}
+        {mapFullscreen && (
+          <div className="fixed inset-0 z-[100] bg-background flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                <h2 className="font-display font-semibold text-foreground text-sm">Live Bus Location</h2>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground font-medium">ETA: {eta} min</span>
+                <Button onClick={() => setMapFullscreen(false)} variant="ghost" size="sm" className="p-1.5">
+                  <Minimize2 className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+            <BusMap route={route} bus={bus} className="flex-1" />
+          </div>
+        )}
+
         <motion.div {...cardAnim} transition={{ delay: 0.3 }}>
           <div className="glass-card overflow-hidden">
-            <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary" />
-              <h2 className="font-display font-semibold text-foreground text-sm">Live Bus Location</h2>
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary" />
+                <h2 className="font-display font-semibold text-foreground text-sm">Live Bus Location</h2>
+              </div>
+              <Button onClick={() => setMapFullscreen(true)} variant="ghost" size="sm" className="p-1.5 text-muted-foreground hover:text-primary">
+                <Maximize2 className="w-4 h-4" />
+              </Button>
             </div>
             <BusMap route={route} bus={bus} className="h-[400px]" />
           </div>
