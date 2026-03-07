@@ -12,7 +12,7 @@ interface BusMapProps {
   allRoutes?: Route[];
 }
 
-const busIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e67e22" stroke="%23fff" stroke-width="1.5" width="32" height="32"><rect x="3" y="3" width="18" height="14" rx="3" fill="%232563eb"/><rect x="5" y="5" width="5" height="5" rx="1" fill="%2393c5fd"/><rect x="14" y="5" width="5" height="5" rx="1" fill="%2393c5fd"/><rect x="5" y="17" width="4" height="4" rx="2" fill="%23334155"/><rect x="15" y="17" width="4" height="4" rx="2" fill="%23334155"/><rect x="10" y="12" width="4" height="2" rx="1" fill="%23f59e0b"/></svg>`;
+const busIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36"><rect x="3" y="3" width="18" height="14" rx="3" fill="%23f5c518"/><rect x="5" y="5" width="5" height="5" rx="1" fill="%23fff"/><rect x="14" y="5" width="5" height="5" rx="1" fill="%23fff"/><rect x="5" y="17" width="4" height="4" rx="2" fill="%23333"/><rect x="15" y="17" width="4" height="4" rx="2" fill="%23333"/><rect x="10" y="12" width="4" height="2" rx="1" fill="%23e6a800"/></svg>`;
 
 const collegeIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%232563eb" width="28" height="28"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>`;
 
