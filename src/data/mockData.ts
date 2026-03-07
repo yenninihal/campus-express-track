@@ -24,7 +24,7 @@ export interface Bus {
   lastUpdated: string;
 }
 
-export const COLLEGE_LOCATION = { lat: 18.7357, lng: 84.0167, name: "Aditya Engineering College, Tekkali" };
+export const COLLEGE_LOCATION = { lat: 18.7357, lng: 84.0167, name: "AITAM College, Tekkali" };
 
 export const students: Student[] = [
   { name: "AFREEN BANU", rollNumber: "25A51A0563", residence: "Amadalavalasa (Railway Station)", route: "AMADALAVALASA" },
