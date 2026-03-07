@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Bus, MapPin, Shield } from "lucide-react";
+import aitamLogo from "@/assets/aitam-logo.png";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getStudentByRollNumber } from "@/data/mockData";
@@ -58,9 +59,8 @@ const Login = () => {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto"
             >
-              <Bus className="w-8 h-8 text-primary-foreground" />
+              <img src={aitamLogo} alt="AITAM College Logo" className="w-20 h-20 mx-auto object-contain" />
             </motion.div>
             <h1 className="text-2xl font-bold font-display text-foreground">College Bus Tracker</h1>
             <p className="text-muted-foreground text-sm">AITAM College, Tekkali</p>
