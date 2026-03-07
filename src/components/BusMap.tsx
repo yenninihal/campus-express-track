@@ -44,8 +44,11 @@ const BusMap = ({ route, bus, className = "", showAllRoutes, allBuses, allRoutes
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    // Google Maps-like tile layer with clear roads
+    L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+      subdomains: ["mt0", "mt1", "mt2", "mt3"],
+      attribution: '&copy; Google Maps',
+      maxZoom: 20,
     }).addTo(map);
 
     // College marker
@@ -71,10 +74,20 @@ const BusMap = ({ route, bus, className = "", showAllRoutes, allBuses, allRoutes
       ];
 
       L.polyline(points, {
-        color: "hsl(215, 90%, 42%)",
-        weight: 4,
-        opacity: 0.7,
-        dashArray: "10, 6",
+        color: "#4285F4",
+        weight: 5,
+        opacity: 0.85,
+        lineJoin: "round",
+        lineCap: "round",
+      }).addTo(map);
+
+      // Add a subtle outline for the route
+      L.polyline(points, {
+        color: "#1a53b5",
+        weight: 8,
+        opacity: 0.3,
+        lineJoin: "round",
+        lineCap: "round",
       }).addTo(map);
 
       // Stop markers

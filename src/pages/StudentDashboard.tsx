@@ -22,6 +22,7 @@ const StudentDashboard = () => {
   const [bus, setBus] = useState<BusType | undefined>();
   const [eta, setEta] = useState(0);
   const [distance, setDistance] = useState(0);
+  const [nextStopName, setNextStopName] = useState("");
 
   useEffect(() => {
     const stored = localStorage.getItem("student");
@@ -37,9 +38,19 @@ const StudentDashboard = () => {
     setBus(b);
 
     if (b && r && r.stops.length > 0) {
-      const firstStop = r.stops[0];
-      setEta(calculateETA(b, firstStop.lat, firstStop.lng));
-      setDistance(parseFloat(calculateDistance(b.currentLat, b.currentLng, firstStop.lat, firstStop.lng).toFixed(1)));
+      // Find nearest upcoming stop
+      let minDist = Infinity;
+      let nearestStop = r.stops[0];
+      r.stops.forEach((stop) => {
+        const d = calculateDistance(b.currentLat, b.currentLng, stop.lat, stop.lng);
+        if (d < minDist) {
+          minDist = d;
+          nearestStop = stop;
+        }
+      });
+      setNextStopName(nearestStop.name);
+      setEta(calculateETA(b, nearestStop.lat, nearestStop.lng));
+      setDistance(parseFloat(minDist.toFixed(1)));
     }
   }, [navigate]);
 
@@ -108,6 +119,7 @@ const StudentDashboard = () => {
               <span>Next Bus</span>
             </div>
             <p className="font-display font-bold text-foreground text-2xl">{eta}<span className="text-sm font-sans font-normal text-muted-foreground ml-1">min</span></p>
+            <p className="text-xs text-muted-foreground truncate" title={nextStopName}>📍 {nextStopName || "Calculating..."}</p>
           </motion.div>
 
           <motion.div {...cardAnim} transition={{ delay: 0.2 }} className="glass-card p-4 space-y-1">
