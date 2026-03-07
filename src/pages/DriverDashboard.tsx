@@ -168,7 +168,7 @@ const DriverDashboard = () => {
                   <Pause className="w-5 h-5 mr-2" />
                   Pause
                 </Button>
-                <Button onClick={() => { setTripStatus("idle"); toast({ title: "Trip Ended" }); }} variant="outline" className="flex-1 h-14 border-destructive text-destructive hover:bg-destructive/10">
+                <Button onClick={handleEndTrip} variant="outline" className="flex-1 h-14 border-destructive text-destructive hover:bg-destructive/10">
                   <Square className="w-5 h-5 mr-2" />
                   End Trip
                 </Button>
@@ -180,7 +180,7 @@ const DriverDashboard = () => {
                   <Play className="w-5 h-5 mr-2" />
                   Resume
                 </Button>
-                <Button onClick={() => { setTripStatus("idle"); toast({ title: "Trip Ended" }); }} variant="outline" className="flex-1 h-14 border-destructive text-destructive hover:bg-destructive/10">
+                <Button onClick={handleEndTrip} variant="outline" className="flex-1 h-14 border-destructive text-destructive hover:bg-destructive/10">
                   <Square className="w-5 h-5 mr-2" />
                   End
                 </Button>
