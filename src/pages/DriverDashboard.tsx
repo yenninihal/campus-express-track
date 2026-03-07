@@ -82,6 +82,17 @@ const DriverDashboard = () => {
     toast({ title: "Trip Started", description: `Route: ${selectedRoute.name}` });
   };
 
+  const handleEndTrip = () => {
+    if (selectedRoute) {
+      localStorage.removeItem(`driver-location-${selectedRoute.id}`);
+    }
+    setTripStatus("idle");
+    setLocation(null);
+    setSpeed(0);
+    setElapsed(0);
+    toast({ title: "Trip Ended" });
+  };
+
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
