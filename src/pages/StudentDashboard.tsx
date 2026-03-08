@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import aitamLogo from "@/assets/aitam-logo.png";
-import { Bus, Clock, MapPin, Navigation, LogOut, Wifi, Route as RouteIcon, Maximize2, Minimize2 } from "lucide-react";
+import { Bus, Clock, MapPin, Navigation, LogOut, Wifi, Route as RouteIcon, Maximize2, Minimize2, AlertTriangle, Settings, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BusMap from "@/components/BusMap";
+import { useTheme } from "@/components/ThemeProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Student,
   getRouteById,
@@ -14,9 +17,19 @@ import {
   type Route,
   type Bus as BusType,
 } from "@/data/mockData";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
   const [student, setStudent] = useState<Student | null>(null);
   const [route, setRoute] = useState<Route | undefined>();
   const [bus, setBus] = useState<BusType | undefined>();
@@ -24,6 +37,9 @@ const StudentDashboard = () => {
   const [distance, setDistance] = useState(0);
   const [nextStopName, setNextStopName] = useState("");
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  const [showMissedDialog, setShowMissedDialog] = useState(false);
+  const [missedSending, setMissedSending] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("student");
@@ -39,7 +55,6 @@ const StudentDashboard = () => {
     setBus(b);
 
     if (b && r && r.stops.length > 0) {
-      // Find nearest upcoming stop
       let minDist = Infinity;
       let nearestStop = r.stops[0];
       r.stops.forEach((stop) => {
@@ -55,42 +70,89 @@ const StudentDashboard = () => {
     }
   }, [navigate]);
 
-  // Poll driver's live location from localStorage (shared by driver device)
+  // Real-time driver location from Supabase
   useEffect(() => {
     if (!route) return;
-    const interval = setInterval(() => {
-      const driverData = localStorage.getItem(`driver-location-${route.id}`);
-      if (driverData) {
-        const loc = JSON.parse(driverData);
-        setBus((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            currentLat: loc.lat,
-            currentLng: loc.lng,
-            speed: loc.speed || 0,
-            status: loc.status || "en-route",
-          };
-        });
-        // Recalculate ETA and distance to nearest stop
-        if (route.stops.length > 0) {
-          let minDist = Infinity;
-          let nearestStop = route.stops[0];
-          route.stops.forEach((stop) => {
-            const d = calculateDistance(loc.lat, loc.lng, stop.lat, stop.lng);
-            if (d < minDist) {
-              minDist = d;
-              nearestStop = stop;
-            }
-          });
-          setNextStopName(nearestStop.name);
-          setEta(calculateETA({ ...bus!, currentLat: loc.lat, currentLng: loc.lng, speed: loc.speed || 30 }, nearestStop.lat, nearestStop.lng));
-          setDistance(parseFloat(minDist.toFixed(1)));
-        }
+
+    // Initial fetch
+    const fetchLocation = async () => {
+      const { data } = await supabase
+        .from("driver_locations")
+        .select("*")
+        .eq("route_id", route.id)
+        .maybeSingle();
+
+      if (data) {
+        updateBusFromDriverData(data);
       }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [route, bus]);
+    };
+    fetchLocation();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel(`driver-${route.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "driver_locations", filter: `route_id=eq.${route.id}` },
+        (payload) => {
+          if (payload.new && typeof payload.new === "object" && "lat" in payload.new) {
+            updateBusFromDriverData(payload.new as any);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [route]);
+
+  const updateBusFromDriverData = (loc: { lat: number; lng: number; speed: number; status: string }) => {
+    setBus((prev) => {
+      if (!prev) return prev;
+      return { ...prev, currentLat: loc.lat, currentLng: loc.lng, speed: loc.speed || 0, status: (loc.status as any) || "en-route" };
+    });
+
+    if (route && route.stops.length > 0) {
+      let minDist = Infinity;
+      let nearestStop = route.stops[0];
+      route.stops.forEach((stop) => {
+        const d = calculateDistance(loc.lat, loc.lng, stop.lat, stop.lng);
+        if (d < minDist) {
+          minDist = d;
+          nearestStop = stop;
+        }
+      });
+      setNextStopName(nearestStop.name);
+      // Road distance approximation (1.3x Haversine)
+      const roadDist = parseFloat((minDist * 1.3).toFixed(1));
+      setDistance(roadDist);
+      setEta(Math.max(1, Math.round(roadDist / ((loc.speed || 30) / 60))));
+    }
+  };
+
+  const handleBusMissed = async () => {
+    if (!student || !route) return;
+    setMissedSending(true);
+
+    // Find the student's nearest stop
+    const stopName = student.residence;
+
+    const { error } = await supabase.from("bus_missed").insert({
+      student_name: student.name,
+      roll_number: student.rollNumber,
+      route_id: route.id,
+      stop_name: stopName,
+    });
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to send notification", variant: "destructive" });
+    } else {
+      toast({ title: "Notification Sent", description: "The next bus driver has been notified. You can take the next bus." });
+    }
+    setMissedSending(false);
+    setShowMissedDialog(false);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("student");
@@ -116,10 +178,29 @@ const StudentDashboard = () => {
               <p className="text-primary-foreground/70 text-xs">{student.name}</p>
             </div>
           </div>
-          <Button onClick={handleLogout} variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10">
-            <LogOut className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button onClick={() => setShowSettings(!showSettings)} variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10">
+              <Settings className="w-4 h-4" />
+            </Button>
+            <Button onClick={handleLogout} variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10">
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
+        {/* Settings dropdown */}
+        {showSettings && (
+          <div className="container mx-auto px-4 pb-3">
+            <div className="bg-card/20 backdrop-blur rounded-lg p-3">
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-3 w-full text-primary-foreground text-sm hover:bg-primary-foreground/10 rounded-lg p-2 transition-colors"
+              >
+                {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                <span>Set Mode: {theme === "light" ? "Dark" : "Bright"}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6 max-w-2xl">
@@ -146,7 +227,7 @@ const StudentDashboard = () => {
           <motion.div {...cardAnim} transition={{ delay: 0.2 }} className="glass-card p-4 space-y-1">
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <Navigation className="w-3.5 h-3.5" />
-              <span>Distance</span>
+              <span>Road Distance</span>
             </div>
             <p className="font-display font-bold text-foreground text-2xl">{distance}<span className="text-sm font-sans font-normal text-muted-foreground ml-1">km</span></p>
           </motion.div>
@@ -166,6 +247,39 @@ const StudentDashboard = () => {
             <p className="text-xs text-muted-foreground">{bus?.driverName}</p>
           </motion.div>
         </div>
+
+        {/* Bus Missed Button */}
+        <motion.div {...cardAnim} transition={{ delay: 0.28 }}>
+          <Button
+            onClick={() => setShowMissedDialog(true)}
+            variant="outline"
+            className="w-full h-12 border-destructive text-destructive hover:bg-destructive/10 font-semibold"
+          >
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            I Missed the Bus
+          </Button>
+        </motion.div>
+
+        {/* Missed Bus Dialog */}
+        <Dialog open={showMissedDialog} onOpenChange={setShowMissedDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+                Bus Missed Notification
+              </DialogTitle>
+              <DialogDescription>
+                This will notify the next bus driver on your route that you missed the bus at <strong>{student.residence}</strong>. The driver can pick you up on the next trip.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowMissedDialog(false)}>Cancel</Button>
+              <Button onClick={handleBusMissed} disabled={missedSending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {missedSending ? "Sending..." : "Notify Driver"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Map */}
         {mapFullscreen && (
@@ -214,12 +328,8 @@ const StudentDashboard = () => {
                   <div key={i} className="flex items-start gap-3 relative">
                     <div className="flex flex-col items-center">
                       <div className="w-3 h-3 rounded-full bg-secondary border-2 border-card z-10" />
-                      {i < route.stops.length - 1 && (
-                        <div className="w-0.5 h-8 bg-border" />
-                      )}
-                      {i === route.stops.length - 1 && (
-                        <div className="w-0.5 h-8 bg-border" />
-                      )}
+                      {i < route.stops.length - 1 && <div className="w-0.5 h-8 bg-border" />}
+                      {i === route.stops.length - 1 && <div className="w-0.5 h-8 bg-border" />}
                     </div>
                     <p className="text-sm text-foreground pb-5">{stop.name}</p>
                   </div>
