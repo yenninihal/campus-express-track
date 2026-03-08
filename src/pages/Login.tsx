@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bus, MapPin, Shield } from "lucide-react";
+import { Bus, MapPin, Shield, User } from "lucide-react";
 import aitamLogo from "@/assets/aitam-logo.png";
+import aitamJubilee from "@/assets/aitam-silver-jubilee.png";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getStudentByRollNumber } from "@/data/mockData";
@@ -14,7 +15,6 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Auto-redirect if already logged in
   useEffect(() => {
     const stored = localStorage.getItem("student");
     if (stored) {
@@ -61,17 +61,27 @@ const Login = () => {
         className="relative z-10 w-full max-w-md mx-4"
       >
         <div className="glass-card p-8 space-y-6">
-          {/* Logo */}
+          {/* Logos */}
           <div className="text-center space-y-3">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="flex items-center justify-center gap-3"
             >
-              <img src={aitamLogo} alt="AITAM College Logo" className="w-20 h-20 mx-auto object-contain" />
+              <img src={aitamLogo} alt="AITAM College Logo" className="w-16 h-16 object-contain" />
+              <img src={aitamJubilee} alt="AITAM Silver Jubilee" className="w-20 h-20 object-contain" />
             </motion.div>
+
+            {/* Black Profile DP */}
+            <div className="flex justify-center">
+              <div className="w-16 h-16 rounded-full bg-foreground flex items-center justify-center">
+                <User className="w-8 h-8 text-background" />
+              </div>
+            </div>
+
             <h1 className="text-2xl font-bold font-display text-foreground">College Bus Tracker</h1>
-            <p className="text-muted-foreground text-sm">AITAM College, Tekkali</p>
+            <p className="text-muted-foreground text-sm">AITAM College, Tekkali • Estd. 2001</p>
           </div>
 
           {/* Student Login */}
