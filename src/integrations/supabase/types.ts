@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bus_missed: {
+        Row: {
+          acknowledged: boolean
+          created_at: string
+          id: string
+          roll_number: string
+          route_id: string
+          stop_name: string
+          student_name: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          created_at?: string
+          id?: string
+          roll_number: string
+          route_id: string
+          stop_name: string
+          student_name: string
+        }
+        Update: {
+          acknowledged?: boolean
+          created_at?: string
+          id?: string
+          roll_number?: string
+          route_id?: string
+          stop_name?: string
+          student_name?: string
+        }
+        Relationships: []
+      }
+      driver_locations: {
+        Row: {
+          id: string
+          lat: number
+          lng: number
+          route_id: string
+          speed: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          lat: number
+          lng: number
+          route_id: string
+          speed?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          lat?: number
+          lng?: number
+          route_id?: string
+          speed?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
