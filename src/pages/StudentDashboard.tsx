@@ -70,21 +70,30 @@ const StudentDashboard = () => {
     }
   }, [navigate]);
 
-  // Play beep sound using Web Audio API
+  // Play louder & longer beep sound using Web Audio API
   const playBeep = () => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContext();
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      oscillator.frequency.value = 880;
-      oscillator.type = "sine";
-      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + 0.5);
+      
+      // Play two-tone alert (more attention-grabbing)
+      const playTone = (freq: number, startTime: number, duration: number) => {
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.frequency.value = freq;
+        oscillator.type = "square"; // More noticeable than sine
+        gainNode.gain.setValueAtTime(0.5, startTime); // Louder (0.5 vs 0.3)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+      };
+      
+      // Play 3 beeps: high-low-high pattern
+      playTone(880, ctx.currentTime, 0.3);
+      playTone(660, ctx.currentTime + 0.35, 0.3);
+      playTone(880, ctx.currentTime + 0.7, 0.4);
     } catch (e) {
       console.log("Audio not supported");
     }
