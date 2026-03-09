@@ -48,11 +48,12 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 gradient-hero" />
-      <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage: 'radial-gradient(circle at 25% 25%, hsl(215 90% 55%) 0%, transparent 50%), radial-gradient(circle at 75% 75%, hsl(28 95% 55%) 0%, transparent 50%)'
+      {/* Animated moving gradient background */}
+      <div className="absolute inset-0 animate-gradient-shift" style={{
+        background: 'linear-gradient(-45deg, hsl(215 90% 55%), hsl(280 85% 50%), hsl(28 95% 55%), hsl(160 80% 45%), hsl(330 85% 55%))',
+        backgroundSize: '400% 400%',
       }} />
+      <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
