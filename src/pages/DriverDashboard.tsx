@@ -41,6 +41,9 @@ const DriverDashboard = () => {
   const [elapsed, setElapsed] = useState(0);
   const [missedStudents, setMissedStudents] = useState<MissedStudent[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [busRecords, setBusRecords] = useState<BusRecord[]>([]);
+  const [selectedBus, setSelectedBus] = useState<BusRecord | null>(null);
+  const [busSearch, setBusSearch] = useState("");
 
   // Broadcast location to Supabase - throttled
   useEffect(() => {
