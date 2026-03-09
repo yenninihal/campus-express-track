@@ -118,8 +118,13 @@
 
 @layer components {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50 rounded-xl;
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl;
     box-shadow: var(--shadow-card);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .glass-card:hover {
+    box-shadow: var(--shadow-elevated);
   }
   
   .gradient-primary {
@@ -148,12 +153,37 @@
     background: hsl(var(--accent));
     opacity: 0.4;
   }
+
+  .floating-particle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: float-particle 15s ease-in-out infinite;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.08), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
 }
 
 @keyframes gradient-shift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+@keyframes float-particle {
+  0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.3; }
+  25% { transform: translateY(-30px) translateX(15px) scale(1.1); opacity: 0.6; }
+  50% { transform: translateY(-10px) translateX(-10px) scale(0.9); opacity: 0.4; }
+  75% { transform: translateY(-25px) translateX(20px) scale(1.05); opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .animate-gradient-shift {

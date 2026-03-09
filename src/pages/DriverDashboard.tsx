@@ -200,7 +200,7 @@ const DriverDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="gradient-accent sticky top-0 z-50">
+      <header className="gradient-accent sticky top-0 z-50 shadow-lg shadow-secondary/10">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button onClick={() => navigate("/")} variant="ghost" size="sm" className="text-secondary-foreground/80 hover:text-secondary-foreground hover:bg-secondary-foreground/10 p-1">
