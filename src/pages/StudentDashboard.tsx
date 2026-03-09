@@ -348,14 +348,21 @@ const StudentDashboard = () => {
 
         {/* Bus Missed Button */}
         <motion.div {...cardAnim} transition={{ delay: 0.28 }}>
-          <Button
-            onClick={() => setShowMissedDialog(true)}
-            variant="outline"
-            className="w-full h-12 border-destructive text-destructive hover:bg-destructive/10 font-semibold"
-          >
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            I Missed the Bus
-          </Button>
+          {isDriverActive ? (
+            <div className="glass-card p-4 text-center space-y-2">
+              <p className="text-sm text-muted-foreground">🚌 Bus is on its way!</p>
+              <p className="text-xs text-muted-foreground">Estimated arrival: <span className="text-accent font-semibold">{arrivalTime || "Calculating..."}</span></p>
+            </div>
+          ) : (
+            <Button
+              onClick={() => setShowMissedDialog(true)}
+              variant="outline"
+              className="w-full h-12 border-destructive text-destructive hover:bg-destructive/10 font-semibold"
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              I Missed the Bus
+            </Button>
+          )}
         </motion.div>
 
         {/* Missed Bus Dialog */}
