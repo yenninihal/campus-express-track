@@ -40,6 +40,8 @@ const StudentDashboard = () => {
   const [showMissedDialog, setShowMissedDialog] = useState(false);
   const [missedSending, setMissedSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isDriverActive, setIsDriverActive] = useState(false);
+  const [arrivalTime, setArrivalTime] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("student");
