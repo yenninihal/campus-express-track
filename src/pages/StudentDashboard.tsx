@@ -53,12 +53,10 @@ const StudentDashboard = () => {
   const [routeBuses, setRouteBuses] = useState<BusInfo[]>([]);
   const [selectedBusInfo, setSelectedBusInfo] = useState<BusInfo | null>(null);
 
-  // Fetch buses from DB matching student's route
   useEffect(() => {
     const fetchRouteBuses = async () => {
       if (!route) return;
-      // Match route name loosely (e.g. student route "SRIKAKULAM" matches "Srikakulam", "Srikakulam (S)", etc.)
-      const routeKeyword = route.name.split(" ")[0]; // e.g. "Amadalavalasa", "Srikakulam"
+      const routeKeyword = route.name.split(" ")[0];
       const { data } = await supabase
         .from("buses")
         .select("*")
@@ -67,7 +65,7 @@ const StudentDashboard = () => {
 
       if (data && data.length > 0) {
         setRouteBuses(data);
-        setSelectedBusInfo(data[0]); // First bus is the current one
+        setSelectedBusInfo(data[0]);
       }
     };
     fetchRouteBuses();
@@ -102,7 +100,6 @@ const StudentDashboard = () => {
     }
   }, [navigate]);
 
-  // Play louder & longer beep sound using Web Audio API
   const playBeep = () => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -127,7 +124,6 @@ const StudentDashboard = () => {
     }
   };
 
-  // Real-time driver location with polling fallback
   useEffect(() => {
     if (!route) return;
 
@@ -257,10 +253,13 @@ const StudentDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="gradient-primary sticky top-0 z-50">
+      <header className="gradient-primary sticky top-0 z-50 shadow-lg shadow-primary/10">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={aitamLogo} alt="AITAM Logo" className="w-9 h-9 object-contain rounded-lg bg-primary-foreground/20 p-0.5" />
+            <div className="relative">
+              <div className="absolute -inset-1 bg-primary-foreground/20 rounded-lg blur-sm" />
+              <img src={aitamLogo} alt="AITAM Logo" className="w-9 h-9 object-contain rounded-lg bg-primary-foreground/20 p-0.5 relative z-10" />
+            </div>
             <div>
               <h1 className="font-display font-bold text-primary-foreground text-sm">AITAM Bus Tracker</h1>
               <p className="text-primary-foreground/70 text-xs">{student.name}</p>
@@ -290,10 +289,11 @@ const StudentDashboard = () => {
         )}
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6 max-w-2xl">
+      <main className="container mx-auto px-4 py-6 space-y-5 max-w-2xl">
         {/* Status Cards */}
         <div className="grid grid-cols-2 gap-3">
-          <motion.div {...cardAnim} transition={{ delay: 0.1 }} className="glass-card p-4 space-y-1">
+          <motion.div {...cardAnim} transition={{ delay: 0.1 }} whileHover={{ scale: 1.02 }} className="glass-card p-4 space-y-1 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <RouteIcon className="w-3.5 h-3.5" />
               <span>Your Route</span>
@@ -302,7 +302,8 @@ const StudentDashboard = () => {
             <p className="text-xs text-muted-foreground">From {route?.startingPoint}</p>
           </motion.div>
 
-          <motion.div {...cardAnim} transition={{ delay: 0.15 }} className="glass-card p-4 space-y-1">
+          <motion.div {...cardAnim} transition={{ delay: 0.15 }} whileHover={{ scale: 1.02 }} className="glass-card p-4 space-y-1 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-secondary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <Clock className="w-3.5 h-3.5" />
               <span>Next Bus</span>
@@ -311,7 +312,8 @@ const StudentDashboard = () => {
             <p className="text-xs text-muted-foreground truncate" title={nextStopName}>📍 {nextStopName || "Calculating..."}</p>
           </motion.div>
 
-          <motion.div {...cardAnim} transition={{ delay: 0.2 }} className="glass-card p-4 space-y-1">
+          <motion.div {...cardAnim} transition={{ delay: 0.2 }} whileHover={{ scale: 1.02 }} className="glass-card p-4 space-y-1 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <Navigation className="w-3.5 h-3.5" />
               <span>Road Distance</span>
@@ -319,7 +321,8 @@ const StudentDashboard = () => {
             <p className="font-display font-bold text-foreground text-2xl">{distance}<span className="text-sm font-sans font-normal text-muted-foreground ml-1">km</span></p>
           </motion.div>
 
-          <motion.div {...cardAnim} transition={{ delay: 0.25 }} className="glass-card p-4 space-y-1">
+          <motion.div {...cardAnim} transition={{ delay: 0.25 }} whileHover={{ scale: 1.02 }} className="glass-card p-4 space-y-1 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <Wifi className="w-3.5 h-3.5" />
               <span>Driver</span>
@@ -335,11 +338,11 @@ const StudentDashboard = () => {
           </motion.div>
         </div>
 
-        {/* About Bus Button - Green */}
-        <motion.div {...cardAnim} transition={{ delay: 0.27 }}>
+        {/* About Bus Button */}
+        <motion.div {...cardAnim} transition={{ delay: 0.27 }} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
           <Button
             onClick={() => setShowAboutBus(true)}
-            className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold text-base"
+            className="w-full h-14 bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-base shadow-lg shadow-accent/20 transition-all rounded-2xl"
           >
             <Info className="w-5 h-5 mr-2" />
             About Bus
@@ -350,19 +353,18 @@ const StudentDashboard = () => {
         <Dialog open={showAboutBus} onOpenChange={setShowAboutBus}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-green-600">
+              <DialogTitle className="flex items-center gap-2 text-accent">
                 <Bus className="w-5 h-5" />
                 Bus Information — {route?.name}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {/* Current Bus */}
               {selectedBusInfo && (
-                <div className="rounded-xl border-2 border-green-500 bg-green-50 dark:bg-green-950/30 p-4 space-y-2">
-                  <h4 className="font-bold text-green-700 dark:text-green-400 text-sm flex items-center gap-2">
+                <div className="rounded-2xl border-2 border-accent bg-accent/5 p-4 space-y-2">
+                  <h4 className="font-bold text-accent text-sm flex items-center gap-2">
                     <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent" />
                     </span>
                     Current Bus (Bus No. {selectedBusInfo.bus_no})
                   </h4>
@@ -385,7 +387,7 @@ const StudentDashboard = () => {
                     </div>
                     <div className="col-span-2">
                       <p className="text-muted-foreground text-xs">Incharge Contact</p>
-                      <a href={`tel:${selectedBusInfo.incharge_contact}`} className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-1">
+                      <a href={`tel:${selectedBusInfo.incharge_contact}`} className="font-semibold text-accent flex items-center gap-1">
                         <Phone className="w-3.5 h-3.5" />
                         {selectedBusInfo.incharge_contact || "—"}
                       </a>
@@ -394,9 +396,8 @@ const StudentDashboard = () => {
                 </div>
               )}
 
-              {/* Next Bus on same route */}
               {nextBus && (
-                <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
+                <div className="rounded-2xl border border-border bg-muted/50 p-4 space-y-2">
                   <h4 className="font-bold text-muted-foreground text-sm flex items-center gap-2">
                     <Clock className="w-3.5 h-3.5" />
                     Next Bus on Route (Bus No. {nextBus.bus_no})
@@ -420,7 +421,7 @@ const StudentDashboard = () => {
                     </div>
                     <div className="col-span-2">
                       <p className="text-muted-foreground text-xs">Incharge Contact</p>
-                      <a href={`tel:${nextBus.incharge_contact}`} className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-1">
+                      <a href={`tel:${nextBus.incharge_contact}`} className="font-semibold text-accent flex items-center gap-1">
                         <Phone className="w-3.5 h-3.5" />
                         {nextBus.incharge_contact || "—"}
                       </a>
@@ -443,11 +444,11 @@ const StudentDashboard = () => {
         </Dialog>
 
         {/* Bus Missed Button */}
-        <motion.div {...cardAnim} transition={{ delay: 0.28 }}>
+        <motion.div {...cardAnim} transition={{ delay: 0.28 }} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
           <Button
             onClick={() => setShowMissedDialog(true)}
             variant="outline"
-            className="w-full h-12 border-destructive text-destructive hover:bg-destructive/10 font-semibold"
+            className="w-full h-14 border-2 border-destructive text-destructive hover:bg-destructive/10 font-bold rounded-2xl transition-all"
           >
             <AlertTriangle className="w-4 h-4 mr-2" />
             I Missed the Bus
@@ -475,7 +476,7 @@ const StudentDashboard = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Map */}
+        {/* Map Fullscreen */}
         {mapFullscreen && (
           <div className="fixed inset-0 z-[100] bg-background flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
@@ -494,6 +495,7 @@ const StudentDashboard = () => {
           </div>
         )}
 
+        {/* Map Card */}
         <motion.div {...cardAnim} transition={{ delay: 0.3 }}>
           <div className="glass-card overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
@@ -512,24 +514,30 @@ const StudentDashboard = () => {
         {/* Route Stops */}
         {route && (
           <motion.div {...cardAnim} transition={{ delay: 0.35 }}>
-            <div className="glass-card p-4 space-y-3">
+            <div className="glass-card p-5 space-y-3">
               <h3 className="font-display font-semibold text-foreground text-sm flex items-center gap-2">
                 <RouteIcon className="w-4 h-4 text-primary" />
                 Route Stops
               </h3>
               <div className="space-y-0">
                 {route.stops.map((stop, i) => (
-                  <div key={i} className="flex items-start gap-3 relative">
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + i * 0.05 }}
+                    className="flex items-start gap-3 relative"
+                  >
                     <div className="flex flex-col items-center">
-                      <div className="w-3 h-3 rounded-full bg-secondary border-2 border-card z-10" />
-                      {i < route.stops.length - 1 && <div className="w-0.5 h-8 bg-border" />}
-                      {i === route.stops.length - 1 && <div className="w-0.5 h-8 bg-border" />}
+                      <div className="w-3.5 h-3.5 rounded-full bg-secondary border-2 border-card z-10 shadow-sm shadow-secondary/30" />
+                      {i < route.stops.length - 1 && <div className="w-0.5 h-8 bg-gradient-to-b from-secondary/40 to-border" />}
+                      {i === route.stops.length - 1 && <div className="w-0.5 h-8 bg-gradient-to-b from-secondary/40 to-primary/40" />}
                     </div>
                     <p className="text-sm text-foreground pb-5">{stop.name}</p>
-                  </div>
+                  </motion.div>
                 ))}
                 <div className="flex items-start gap-3">
-                  <div className="w-3 h-3 rounded-full bg-primary border-2 border-card" />
+                  <div className="w-3.5 h-3.5 rounded-full bg-primary border-2 border-card shadow-sm shadow-primary/30" />
                   <p className="text-sm font-semibold text-primary">AITAM College</p>
                 </div>
               </div>
