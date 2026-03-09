@@ -44,8 +44,8 @@ const BusMap = ({ route, bus, className = "", showAllRoutes, allBuses, allRoutes
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    // Google Maps-like tile layer with clear roads
-    L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+    // Google Satellite Hybrid layer (satellite + roads/labels)
+    L.tileLayer("https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", {
       subdomains: ["mt0", "mt1", "mt2", "mt3"],
       attribution: '&copy; Google Maps',
       maxZoom: 20,
