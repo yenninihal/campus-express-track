@@ -211,7 +211,18 @@ const StudentDashboard = () => {
       // Road distance approximation (1.3x Haversine)
       const roadDist = parseFloat((minDist * 1.3).toFixed(1));
       setDistance(roadDist);
-      setEta(Math.max(1, Math.round(roadDist / ((loc.speed || 30) / 60))));
+      const calculatedEta = Math.max(1, Math.round(roadDist / ((loc.speed || 30) / 60)));
+      setEta(calculatedEta);
+
+      // Calculate arrival time in IST
+      const arrival = new Date(Date.now() + calculatedEta * 60 * 1000);
+      const arrivalIST = arrival.toLocaleTimeString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      setArrivalTime(arrivalIST);
     }
   };
 
