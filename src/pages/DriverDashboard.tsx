@@ -207,9 +207,11 @@ const DriverDashboard = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="font-display font-bold text-secondary-foreground text-sm">Driver Panel</h1>
+              <h1 className="font-display font-bold text-secondary-foreground text-sm">
+                {selectedBus ? `Bus ${selectedBus.bus_no} • ${selectedBus.reg_no}` : 'Driver Panel'}
+              </h1>
               <p className="text-secondary-foreground/70 text-xs">
-                {tripStatus === "active" ? "Trip Active" : tripStatus === "paused" ? "Paused" : "Ready"}
+                {tripStatus === "active" ? `Trip Active - ${selectedRoute?.name}` : tripStatus === "paused" ? "Paused" : selectedBus ? selectedBus.route_name : "Select a bus to start"}
               </p>
             </div>
           </div>
