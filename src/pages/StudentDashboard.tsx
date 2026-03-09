@@ -315,7 +315,10 @@ const StudentDashboard = () => {
               <Clock className="w-3.5 h-3.5" />
               <span>Next Bus</span>
             </div>
-            <p className="font-display font-bold text-foreground text-2xl">{eta}<span className="text-sm font-sans font-normal text-muted-foreground ml-1">min</span></p>
+            <div className="flex items-baseline gap-2">
+              <p className="font-display font-bold text-foreground text-2xl">{eta}<span className="text-sm font-sans font-normal text-muted-foreground ml-1">min</span></p>
+              {arrivalTime && <p className="text-xs text-accent font-semibold">≈ {arrivalTime}</p>}
+            </div>
             <p className="text-xs text-muted-foreground truncate" title={nextStopName}>📍 {nextStopName || "Calculating..."}</p>
           </motion.div>
 
