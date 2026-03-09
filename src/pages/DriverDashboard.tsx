@@ -45,6 +45,15 @@ const DriverDashboard = () => {
   const [selectedBus, setSelectedBus] = useState<BusRecord | null>(null);
   const [busSearch, setBusSearch] = useState("");
 
+  // Fetch all buses from database
+  useEffect(() => {
+    const fetchBuses = async () => {
+      const { data } = await supabase.from("buses").select("*").order("bus_no");
+      if (data) setBusRecords(data as BusRecord[]);
+    };
+    fetchBuses();
+  }, []);
+
   // Broadcast location to Supabase - throttled
   useEffect(() => {
     if (tripStatus !== "active" || !selectedRoute) return;
