@@ -91,35 +91,6 @@ const DriverDashboard = () => {
     return () => clearInterval(interval);
   }, [tripStatus]);
 
-  // Play loud alert beep when student misses bus
-  const playAlertBeep = () => {
-    try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioContext();
-      
-      // Three urgent beeps with increasing pitch
-      const playTone = (freq: number, startTime: number, duration: number) => {
-        const oscillator = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(ctx.destination);
-        oscillator.frequency.value = freq;
-        oscillator.type = "sawtooth"; // More urgent sound
-        gainNode.gain.setValueAtTime(0.6, startTime); // Very loud
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-        oscillator.start(startTime);
-        oscillator.stop(startTime + duration);
-      };
-      
-      // Urgent three-tone alert
-      playTone(440, ctx.currentTime, 0.2);
-      playTone(550, ctx.currentTime + 0.25, 0.2);
-      playTone(660, ctx.currentTime + 0.5, 0.3);
-    } catch (e) {
-      console.log("Audio not supported");
-    }
-  };
-
   // Listen for missed bus notifications in real-time
   useEffect(() => {
     if (!selectedRoute) return;
@@ -143,7 +114,6 @@ const DriverDashboard = () => {
         (payload) => {
           const newStudent = payload.new as MissedStudent;
           setMissedStudents((prev) => [newStudent, ...prev]);
-          playAlertBeep(); // Play loud alert
           toast({
             title: "🚨 Student Missed Bus!",
             description: `${newStudent.student_name} missed the bus at ${newStudent.stop_name}`,

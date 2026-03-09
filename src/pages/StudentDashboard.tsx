@@ -40,8 +40,6 @@ const StudentDashboard = () => {
   const [showMissedDialog, setShowMissedDialog] = useState(false);
   const [missedSending, setMissedSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [isDriverActive, setIsDriverActive] = useState(false);
-  const [arrivalTime, setArrivalTime] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("student");
@@ -117,11 +115,8 @@ const StudentDashboard = () => {
         .maybeSingle();
 
       if (data) {
-        setIsDriverActive(true);
         updateBusFromDriverData(data);
         lastSync = data.updated_at;
-      } else {
-        setIsDriverActive(false);
       }
     };
     fetchLocation();
@@ -136,11 +131,8 @@ const StudentDashboard = () => {
         .maybeSingle();
 
       if (data && data.updated_at !== lastSync) {
-        setIsDriverActive(true);
         updateBusFromDriverData(data);
         lastSync = data.updated_at;
-      } else if (!data) {
-        setIsDriverActive(false);
       }
     }, 3000);
 
@@ -157,7 +149,6 @@ const StudentDashboard = () => {
             description: "Your bus has started its trip. Track it on the map!",
           });
           if (payload.new && typeof payload.new === "object" && "lat" in payload.new) {
-            setIsDriverActive(true);
             updateBusFromDriverData(payload.new as any);
             lastSync = (payload.new as any).updated_at;
           }
@@ -168,18 +159,9 @@ const StudentDashboard = () => {
         { event: "UPDATE", schema: "public", table: "driver_locations", filter: `route_id=eq.${route.id}` },
         (payload) => {
           if (payload.new && typeof payload.new === "object" && "lat" in payload.new) {
-            setIsDriverActive(true);
             updateBusFromDriverData(payload.new as any);
             lastSync = (payload.new as any).updated_at;
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "driver_locations", filter: `route_id=eq.${route.id}` },
-        () => {
-          setIsDriverActive(false);
-          setArrivalTime(null);
         }
       )
       .subscribe();
@@ -211,18 +193,7 @@ const StudentDashboard = () => {
       // Road distance approximation (1.3x Haversine)
       const roadDist = parseFloat((minDist * 1.3).toFixed(1));
       setDistance(roadDist);
-      const calculatedEta = Math.max(1, Math.round(roadDist / ((loc.speed || 30) / 60)));
-      setEta(calculatedEta);
-
-      // Calculate arrival time in IST
-      const arrival = new Date(Date.now() + calculatedEta * 60 * 1000);
-      const arrivalIST = arrival.toLocaleTimeString('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-      setArrivalTime(arrivalIST);
+      setEta(Math.max(1, Math.round(roadDist / ((loc.speed || 30) / 60))));
     }
   };
 
@@ -315,10 +286,7 @@ const StudentDashboard = () => {
               <Clock className="w-3.5 h-3.5" />
               <span>Next Bus</span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <p className="font-display font-bold text-foreground text-2xl">{eta}<span className="text-sm font-sans font-normal text-muted-foreground ml-1">min</span></p>
-              {arrivalTime && <p className="text-xs text-accent font-semibold">≈ {arrivalTime}</p>}
-            </div>
+            <p className="font-display font-bold text-foreground text-2xl">{eta}<span className="text-sm font-sans font-normal text-muted-foreground ml-1">min</span></p>
             <p className="text-xs text-muted-foreground truncate" title={nextStopName}>📍 {nextStopName || "Calculating..."}</p>
           </motion.div>
 
@@ -348,21 +316,14 @@ const StudentDashboard = () => {
 
         {/* Bus Missed Button */}
         <motion.div {...cardAnim} transition={{ delay: 0.28 }}>
-          {isDriverActive ? (
-            <div className="glass-card p-4 text-center space-y-2">
-              <p className="text-sm text-muted-foreground">🚌 Bus is on its way!</p>
-              <p className="text-xs text-muted-foreground">Estimated arrival: <span className="text-accent font-semibold">{arrivalTime || "Calculating..."}</span></p>
-            </div>
-          ) : (
-            <Button
-              onClick={() => setShowMissedDialog(true)}
-              variant="outline"
-              className="w-full h-12 border-destructive text-destructive hover:bg-destructive/10 font-semibold"
-            >
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              I Missed the Bus
-            </Button>
-          )}
+          <Button
+            onClick={() => setShowMissedDialog(true)}
+            variant="outline"
+            className="w-full h-12 border-destructive text-destructive hover:bg-destructive/10 font-semibold"
+          >
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            I Missed the Bus
+          </Button>
         </motion.div>
 
         {/* Missed Bus Dialog */}
