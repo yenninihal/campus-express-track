@@ -269,28 +269,56 @@ const DriverDashboard = () => {
           </motion.div>
         )}
 
-        {/* Route Selection */}
+        {/* Bus & Route Selection */}
         {tripStatus === "idle" && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4 space-y-3">
             <h2 className="font-display font-semibold text-foreground text-sm flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-secondary" />
-              Select Route
+              <Bus className="w-4 h-4 text-secondary" />
+              Select Your Bus
             </h2>
-            <div className="grid grid-cols-2 gap-2">
-              {routes.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => setSelectedRoute(r)}
-                  className={`p-3 rounded-lg text-left text-sm transition-all border ${
-                    selectedRoute?.id === r.id
-                      ? "border-primary bg-primary/10 text-primary font-semibold"
-                      : "border-border bg-card text-foreground hover:border-primary/30"
-                  }`}
-                >
-                  <p className="font-medium">{r.name}</p>
-                  <p className="text-xs text-muted-foreground">{r.startingPoint}</p>
-                </button>
-              ))}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={busSearch}
+                onChange={(e) => setBusSearch(e.target.value)}
+                placeholder="Search by bus no, route, driver name..."
+                className="pl-10 h-10 bg-muted/50"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto">
+              {busRecords
+                .filter((b) => {
+                  const q = busSearch.toLowerCase();
+                  return !q || b.bus_no.toString().includes(q) || b.route_name.toLowerCase().includes(q) || b.driver_name.toLowerCase().includes(q) || b.reg_no.toLowerCase().includes(q);
+                })
+                .map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => {
+                      setSelectedBus(b);
+                      // Try to match to an existing route for map display
+                      const matchedRoute = routes.find(r => r.name.toLowerCase() === b.route_name.toLowerCase());
+                      setSelectedRoute(matchedRoute || {
+                        id: b.route_name.toUpperCase().replace(/[^A-Z0-9]/g, '_'),
+                        name: b.route_name,
+                        startingPoint: b.route_name,
+                        stops: [],
+                        collegeStop: COLLEGE_LOCATION,
+                      });
+                    }}
+                    className={`p-3 rounded-lg text-left text-sm transition-all border ${
+                      selectedBus?.id === b.id
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
+                        : "border-border bg-card text-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">Bus {b.bus_no} • {b.route_name}</p>
+                      <span className="text-xs text-muted-foreground">{b.reg_no}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Driver: {b.driver_name || '—'} | Staff: {b.staff_incharge || '—'}</p>
+                  </button>
+                ))}
             </div>
           </motion.div>
         )}
