@@ -90,9 +90,12 @@ const StudentDashboard = () => {
     }
   };
 
-  // Real-time driver location from Supabase
+  // Real-time driver location with polling fallback
   useEffect(() => {
     if (!route) return;
+
+    let isActive = true;
+    let lastSync: string | null = null;
 
     // Initial fetch
     const fetchLocation = async () => {
@@ -104,18 +107,33 @@ const StudentDashboard = () => {
 
       if (data) {
         updateBusFromDriverData(data);
+        lastSync = data.updated_at;
       }
     };
     fetchLocation();
 
-    // Subscribe to real-time updates
+    // Polling fallback every 3s to catch missed realtime events
+    const pollInterval = setInterval(async () => {
+      if (!isActive) return;
+      const { data } = await supabase
+        .from("driver_locations")
+        .select("*")
+        .eq("route_id", route.id)
+        .maybeSingle();
+
+      if (data && data.updated_at !== lastSync) {
+        updateBusFromDriverData(data);
+        lastSync = data.updated_at;
+      }
+    }, 3000);
+
+    // Subscribe to real-time updates (primary)
     const channel = supabase
       .channel(`driver-${route.id}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "driver_locations", filter: `route_id=eq.${route.id}` },
         (payload) => {
-          // Driver started the trip - play beep notification
           playBeep();
           toast({
             title: "🚌 Bus Started!",
@@ -123,6 +141,7 @@ const StudentDashboard = () => {
           });
           if (payload.new && typeof payload.new === "object" && "lat" in payload.new) {
             updateBusFromDriverData(payload.new as any);
+            lastSync = (payload.new as any).updated_at;
           }
         }
       )
@@ -132,12 +151,15 @@ const StudentDashboard = () => {
         (payload) => {
           if (payload.new && typeof payload.new === "object" && "lat" in payload.new) {
             updateBusFromDriverData(payload.new as any);
+            lastSync = (payload.new as any).updated_at;
           }
         }
       )
       .subscribe();
 
     return () => {
+      isActive = false;
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, [route, toast]);

@@ -31,17 +31,22 @@ const DriverDashboard = () => {
   const [missedStudents, setMissedStudents] = useState<MissedStudent[]>([]);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Broadcast location to Supabase
-  const updateLocation = useCallback(() => {
+  // Broadcast location to Supabase - throttled
+  useEffect(() => {
+    if (tripStatus !== "active" || !selectedRoute) return;
     if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        const spd = Math.round((pos.coords.speed || 0) * 3.6);
-        setLocation(loc);
-        setSpeed(spd);
 
-        if (selectedRoute) {
+    let isMounted = true;
+
+    const sendLocation = async () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          if (!isMounted) return;
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          const spd = Math.round((pos.coords.speed || 0) * 3.6);
+          setLocation(loc);
+          setSpeed(spd);
+
           await supabase.from("driver_locations").upsert({
             route_id: selectedRoute.id,
             lat: loc.lat,
@@ -50,35 +55,35 @@ const DriverDashboard = () => {
             status: "en-route",
             updated_at: new Date().toISOString(),
           }, { onConflict: "route_id" });
-        }
-      },
-      () => {
-        if (selectedRoute && !location) {
+        },
+        () => {
+          if (!isMounted) return;
+          // Fallback to first stop location
           const loc = { lat: selectedRoute.stops[0].lat, lng: selectedRoute.stops[0].lng };
           setLocation(loc);
           setSpeed(0);
-          if (selectedRoute) {
-            supabase.from("driver_locations").upsert({
-              route_id: selectedRoute.id,
-              lat: loc.lat,
-              lng: loc.lng,
-              speed: 0,
-              status: "en-route",
-              updated_at: new Date().toISOString(),
-            }, { onConflict: "route_id" });
-          }
-        }
-      },
-      { enableHighAccuracy: true }
-    );
-  }, [selectedRoute, location]);
+          supabase.from("driver_locations").upsert({
+            route_id: selectedRoute.id,
+            lat: loc.lat,
+            lng: loc.lng,
+            speed: 0,
+            status: "en-route",
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "route_id" });
+        },
+        { enableHighAccuracy: true, maximumAge: 3000, timeout: 5000 }
+      );
+    };
 
-  useEffect(() => {
-    if (tripStatus !== "active") return;
-    updateLocation();
-    const interval = setInterval(updateLocation, 5000);
-    return () => clearInterval(interval);
-  }, [tripStatus, updateLocation]);
+    // Initial + every 5 seconds
+    sendLocation();
+    const interval = setInterval(sendLocation, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [tripStatus, selectedRoute]);
 
   useEffect(() => {
     if (tripStatus !== "active") return;
