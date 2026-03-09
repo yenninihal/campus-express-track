@@ -1,13 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bus, Play, Pause, Square, MapPin, Navigation, Clock, ArrowLeft, AlertTriangle, Bell, Settings, Sun, Moon } from "lucide-react";
+import { Bus, Play, Pause, Square, MapPin, Navigation, Clock, ArrowLeft, AlertTriangle, Bell, Settings, Sun, Moon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import BusMap from "@/components/BusMap";
 import { routes, COLLEGE_LOCATION, type Route } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
+
+interface BusRecord {
+  id: number;
+  bus_no: number;
+  reg_no: string;
+  route_name: string;
+  driver_name: string;
+  staff_incharge: string;
+  incharge_contact: string;
+}
 
 type TripStatus = "idle" | "active" | "paused";
 
