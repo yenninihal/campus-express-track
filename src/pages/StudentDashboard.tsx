@@ -117,8 +117,11 @@ const StudentDashboard = () => {
         .maybeSingle();
 
       if (data) {
+        setIsDriverActive(true);
         updateBusFromDriverData(data);
         lastSync = data.updated_at;
+      } else {
+        setIsDriverActive(false);
       }
     };
     fetchLocation();
@@ -133,8 +136,11 @@ const StudentDashboard = () => {
         .maybeSingle();
 
       if (data && data.updated_at !== lastSync) {
+        setIsDriverActive(true);
         updateBusFromDriverData(data);
         lastSync = data.updated_at;
+      } else if (!data) {
+        setIsDriverActive(false);
       }
     }, 3000);
 
@@ -151,6 +157,7 @@ const StudentDashboard = () => {
             description: "Your bus has started its trip. Track it on the map!",
           });
           if (payload.new && typeof payload.new === "object" && "lat" in payload.new) {
+            setIsDriverActive(true);
             updateBusFromDriverData(payload.new as any);
             lastSync = (payload.new as any).updated_at;
           }
@@ -161,9 +168,18 @@ const StudentDashboard = () => {
         { event: "UPDATE", schema: "public", table: "driver_locations", filter: `route_id=eq.${route.id}` },
         (payload) => {
           if (payload.new && typeof payload.new === "object" && "lat" in payload.new) {
+            setIsDriverActive(true);
             updateBusFromDriverData(payload.new as any);
             lastSync = (payload.new as any).updated_at;
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "driver_locations", filter: `route_id=eq.${route.id}` },
+        () => {
+          setIsDriverActive(false);
+          setArrivalTime(null);
         }
       )
       .subscribe();
