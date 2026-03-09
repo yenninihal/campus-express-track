@@ -44,6 +44,36 @@ export type Database = {
         }
         Relationships: []
       }
+      buses: {
+        Row: {
+          bus_no: number
+          driver_name: string
+          id: number
+          incharge_contact: string
+          reg_no: string
+          route_name: string
+          staff_incharge: string
+        }
+        Insert: {
+          bus_no: number
+          driver_name?: string
+          id?: number
+          incharge_contact?: string
+          reg_no: string
+          route_name: string
+          staff_incharge?: string
+        }
+        Update: {
+          bus_no?: number
+          driver_name?: string
+          id?: number
+          incharge_contact?: string
+          reg_no?: string
+          route_name?: string
+          staff_incharge?: string
+        }
+        Relationships: []
+      }
       driver_locations: {
         Row: {
           id: string

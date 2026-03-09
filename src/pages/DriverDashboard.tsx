@@ -1,13 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bus, Play, Pause, Square, MapPin, Navigation, Clock, ArrowLeft, AlertTriangle, Bell, Settings, Sun, Moon } from "lucide-react";
+import { Bus, Play, Pause, Square, MapPin, Navigation, Clock, ArrowLeft, AlertTriangle, Bell, Settings, Sun, Moon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import BusMap from "@/components/BusMap";
 import { routes, COLLEGE_LOCATION, type Route } from "@/data/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/ThemeProvider";
 import { supabase } from "@/integrations/supabase/client";
+
+interface BusRecord {
+  id: number;
+  bus_no: number;
+  reg_no: string;
+  route_name: string;
+  driver_name: string;
+  staff_incharge: string;
+  incharge_contact: string;
+}
 
 type TripStatus = "idle" | "active" | "paused";
 
@@ -30,6 +41,18 @@ const DriverDashboard = () => {
   const [elapsed, setElapsed] = useState(0);
   const [missedStudents, setMissedStudents] = useState<MissedStudent[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [busRecords, setBusRecords] = useState<BusRecord[]>([]);
+  const [selectedBus, setSelectedBus] = useState<BusRecord | null>(null);
+  const [busSearch, setBusSearch] = useState("");
+
+  // Fetch all buses from database
+  useEffect(() => {
+    const fetchBuses = async () => {
+      const { data } = await supabase.from("buses").select("*").order("bus_no");
+      if (data) setBusRecords(data as BusRecord[]);
+    };
+    fetchBuses();
+  }, []);
 
   // Broadcast location to Supabase - throttled
   useEffect(() => {
@@ -131,15 +154,15 @@ const DriverDashboard = () => {
   };
 
   const handleStart = async () => {
-    if (!selectedRoute) {
-      toast({ title: "Select a route first", variant: "destructive" });
+    if (!selectedRoute || !selectedBus) {
+      toast({ title: "Select a bus first", variant: "destructive" });
       return;
     }
     // Delete existing record so students get a fresh INSERT event (triggers beep)
     await supabase.from("driver_locations").delete().eq("route_id", selectedRoute.id);
     
     // Insert new record with "started" status - this triggers student notifications
-    const initialLoc = selectedRoute.stops[0];
+    const initialLoc = selectedRoute.stops.length > 0 ? selectedRoute.stops[0] : COLLEGE_LOCATION;
     await supabase.from("driver_locations").insert({
       route_id: selectedRoute.id,
       lat: initialLoc.lat,
@@ -151,7 +174,7 @@ const DriverDashboard = () => {
     
     setTripStatus("active");
     setElapsed(0);
-    toast({ title: "Trip Started", description: `Route: ${selectedRoute.name}` });
+    toast({ title: "Trip Started", description: `Bus ${selectedBus.bus_no} • ${selectedRoute.name}` });
   };
 
   const handleEndTrip = async () => {
@@ -184,9 +207,11 @@ const DriverDashboard = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="font-display font-bold text-secondary-foreground text-sm">Driver Panel</h1>
+              <h1 className="font-display font-bold text-secondary-foreground text-sm">
+                {selectedBus ? `Bus ${selectedBus.bus_no} • ${selectedBus.reg_no}` : 'Driver Panel'}
+              </h1>
               <p className="text-secondary-foreground/70 text-xs">
-                {tripStatus === "active" ? "Trip Active" : tripStatus === "paused" ? "Paused" : "Ready"}
+                {tripStatus === "active" ? `Trip Active - ${selectedRoute?.name}` : tripStatus === "paused" ? "Paused" : selectedBus ? selectedBus.route_name : "Select a bus to start"}
               </p>
             </div>
           </div>
@@ -246,28 +271,56 @@ const DriverDashboard = () => {
           </motion.div>
         )}
 
-        {/* Route Selection */}
+        {/* Bus & Route Selection */}
         {tripStatus === "idle" && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4 space-y-3">
             <h2 className="font-display font-semibold text-foreground text-sm flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-secondary" />
-              Select Route
+              <Bus className="w-4 h-4 text-secondary" />
+              Select Your Bus
             </h2>
-            <div className="grid grid-cols-2 gap-2">
-              {routes.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => setSelectedRoute(r)}
-                  className={`p-3 rounded-lg text-left text-sm transition-all border ${
-                    selectedRoute?.id === r.id
-                      ? "border-primary bg-primary/10 text-primary font-semibold"
-                      : "border-border bg-card text-foreground hover:border-primary/30"
-                  }`}
-                >
-                  <p className="font-medium">{r.name}</p>
-                  <p className="text-xs text-muted-foreground">{r.startingPoint}</p>
-                </button>
-              ))}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={busSearch}
+                onChange={(e) => setBusSearch(e.target.value)}
+                placeholder="Search by bus no, route, driver name..."
+                className="pl-10 h-10 bg-muted/50"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto">
+              {busRecords
+                .filter((b) => {
+                  const q = busSearch.toLowerCase();
+                  return !q || b.bus_no.toString().includes(q) || b.route_name.toLowerCase().includes(q) || b.driver_name.toLowerCase().includes(q) || b.reg_no.toLowerCase().includes(q);
+                })
+                .map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => {
+                      setSelectedBus(b);
+                      // Try to match to an existing route for map display
+                      const matchedRoute = routes.find(r => r.name.toLowerCase() === b.route_name.toLowerCase());
+                      setSelectedRoute(matchedRoute || {
+                        id: b.route_name.toUpperCase().replace(/[^A-Z0-9]/g, '_'),
+                        name: b.route_name,
+                        startingPoint: b.route_name,
+                        stops: [],
+                        collegeStop: COLLEGE_LOCATION,
+                      });
+                    }}
+                    className={`p-3 rounded-lg text-left text-sm transition-all border ${
+                      selectedBus?.id === b.id
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
+                        : "border-border bg-card text-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">Bus {b.bus_no} • {b.route_name}</p>
+                      <span className="text-xs text-muted-foreground">{b.reg_no}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Driver: {b.driver_name || '—'} | Staff: {b.staff_incharge || '—'}</p>
+                  </button>
+                ))}
             </div>
           </motion.div>
         )}
