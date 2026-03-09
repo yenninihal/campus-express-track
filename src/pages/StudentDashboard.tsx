@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import aitamLogo from "@/assets/aitam-logo.png";
-import { Bus, Clock, MapPin, Navigation, LogOut, Wifi, Route as RouteIcon, Maximize2, Minimize2, AlertTriangle, Settings, Sun, Moon } from "lucide-react";
+import { Bus, Clock, MapPin, Navigation, LogOut, Wifi, Route as RouteIcon, Maximize2, Minimize2, AlertTriangle, Settings, Sun, Moon, Info, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BusMap from "@/components/BusMap";
 import { useTheme } from "@/components/ThemeProvider";
@@ -26,6 +26,15 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+interface BusInfo {
+  bus_no: number;
+  reg_no: string;
+  route_name: string;
+  driver_name: string;
+  staff_incharge: string;
+  incharge_contact: string;
+}
+
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -40,6 +49,29 @@ const StudentDashboard = () => {
   const [showMissedDialog, setShowMissedDialog] = useState(false);
   const [missedSending, setMissedSending] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAboutBus, setShowAboutBus] = useState(false);
+  const [routeBuses, setRouteBuses] = useState<BusInfo[]>([]);
+  const [selectedBusInfo, setSelectedBusInfo] = useState<BusInfo | null>(null);
+
+  // Fetch buses from DB matching student's route
+  useEffect(() => {
+    const fetchRouteBuses = async () => {
+      if (!route) return;
+      // Match route name loosely (e.g. student route "SRIKAKULAM" matches "Srikakulam", "Srikakulam (S)", etc.)
+      const routeKeyword = route.name.split(" ")[0]; // e.g. "Amadalavalasa", "Srikakulam"
+      const { data } = await supabase
+        .from("buses")
+        .select("*")
+        .ilike("route_name", `%${routeKeyword}%`)
+        .order("bus_no", { ascending: true });
+
+      if (data && data.length > 0) {
+        setRouteBuses(data);
+        setSelectedBusInfo(data[0]); // First bus is the current one
+      }
+    };
+    fetchRouteBuses();
+  }, [route]);
 
   useEffect(() => {
     const stored = localStorage.getItem("student");
@@ -75,22 +107,18 @@ const StudentDashboard = () => {
     try {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContext();
-      
-      // Play two-tone alert (more attention-grabbing)
       const playTone = (freq: number, startTime: number, duration: number) => {
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
         oscillator.connect(gainNode);
         gainNode.connect(ctx.destination);
         oscillator.frequency.value = freq;
-        oscillator.type = "square"; // More noticeable than sine
-        gainNode.gain.setValueAtTime(0.5, startTime); // Louder (0.5 vs 0.3)
+        oscillator.type = "square";
+        gainNode.gain.setValueAtTime(0.5, startTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
         oscillator.start(startTime);
         oscillator.stop(startTime + duration);
       };
-      
-      // Play 3 beeps: high-low-high pattern
       playTone(880, ctx.currentTime, 0.3);
       playTone(660, ctx.currentTime + 0.35, 0.3);
       playTone(880, ctx.currentTime + 0.7, 0.4);
@@ -106,7 +134,6 @@ const StudentDashboard = () => {
     let isActive = true;
     let lastSync: string | null = null;
 
-    // Initial fetch
     const fetchLocation = async () => {
       const { data } = await supabase
         .from("driver_locations")
@@ -121,7 +148,6 @@ const StudentDashboard = () => {
     };
     fetchLocation();
 
-    // Polling fallback every 3s to catch missed realtime events
     const pollInterval = setInterval(async () => {
       if (!isActive) return;
       const { data } = await supabase
@@ -136,7 +162,6 @@ const StudentDashboard = () => {
       }
     }, 3000);
 
-    // Subscribe to real-time updates (primary)
     const channel = supabase
       .channel(`driver-${route.id}`)
       .on(
@@ -190,7 +215,6 @@ const StudentDashboard = () => {
         }
       });
       setNextStopName(nearestStop.name);
-      // Road distance approximation (1.3x Haversine)
       const roadDist = parseFloat((minDist * 1.3).toFixed(1));
       setDistance(roadDist);
       setEta(Math.max(1, Math.round(roadDist / ((loc.speed || 30) / 60))));
@@ -200,17 +224,13 @@ const StudentDashboard = () => {
   const handleBusMissed = async () => {
     if (!student || !route) return;
     setMissedSending(true);
-
-    // Find the student's nearest stop
     const stopName = student.residence;
-
     const { error } = await supabase.from("bus_missed").insert({
       student_name: student.name,
       roll_number: student.rollNumber,
       route_id: route.id,
       stop_name: stopName,
     });
-
     if (error) {
       toast({ title: "Error", description: "Failed to send notification", variant: "destructive" });
     } else {
@@ -231,6 +251,8 @@ const StudentDashboard = () => {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
   };
+
+  const nextBus = routeBuses.length > 1 ? routeBuses[1] : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -253,7 +275,6 @@ const StudentDashboard = () => {
             </Button>
           </div>
         </div>
-        {/* Settings dropdown */}
         {showSettings && (
           <div className="container mx-auto px-4 pb-3">
             <div className="bg-card/20 backdrop-blur rounded-lg p-3">
@@ -310,9 +331,116 @@ const StudentDashboard = () => {
               </span>
               <p className="font-semibold text-foreground text-sm">Online</p>
             </div>
-            <p className="text-xs text-muted-foreground">{bus?.driverName}</p>
+            <p className="text-xs text-muted-foreground">{selectedBusInfo?.driver_name || bus?.driverName}</p>
           </motion.div>
         </div>
+
+        {/* About Bus Button - Green */}
+        <motion.div {...cardAnim} transition={{ delay: 0.27 }}>
+          <Button
+            onClick={() => setShowAboutBus(true)}
+            className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold text-base"
+          >
+            <Info className="w-5 h-5 mr-2" />
+            About Bus
+          </Button>
+        </motion.div>
+
+        {/* About Bus Dialog */}
+        <Dialog open={showAboutBus} onOpenChange={setShowAboutBus}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-green-600">
+                <Bus className="w-5 h-5" />
+                Bus Information — {route?.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Current Bus */}
+              {selectedBusInfo && (
+                <div className="rounded-xl border-2 border-green-500 bg-green-50 dark:bg-green-950/30 p-4 space-y-2">
+                  <h4 className="font-bold text-green-700 dark:text-green-400 text-sm flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                    </span>
+                    Current Bus (Bus No. {selectedBusInfo.bus_no})
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs">Registration No</p>
+                      <p className="font-semibold text-foreground">{selectedBusInfo.reg_no}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Route</p>
+                      <p className="font-semibold text-foreground">{selectedBusInfo.route_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Driver Name</p>
+                      <p className="font-semibold text-foreground">{selectedBusInfo.driver_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Staff Incharge</p>
+                      <p className="font-semibold text-foreground">{selectedBusInfo.staff_incharge || "—"}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground text-xs">Incharge Contact</p>
+                      <a href={`tel:${selectedBusInfo.incharge_contact}`} className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5" />
+                        {selectedBusInfo.incharge_contact || "—"}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Next Bus on same route */}
+              {nextBus && (
+                <div className="rounded-xl border border-border bg-muted/50 p-4 space-y-2">
+                  <h4 className="font-bold text-muted-foreground text-sm flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5" />
+                    Next Bus on Route (Bus No. {nextBus.bus_no})
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs">Registration No</p>
+                      <p className="font-semibold text-foreground">{nextBus.reg_no}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Route</p>
+                      <p className="font-semibold text-foreground">{nextBus.route_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Driver Name</p>
+                      <p className="font-semibold text-foreground">{nextBus.driver_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Staff Incharge</p>
+                      <p className="font-semibold text-foreground">{nextBus.staff_incharge || "—"}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground text-xs">Incharge Contact</p>
+                      <a href={`tel:${nextBus.incharge_contact}`} className="font-semibold text-green-600 dark:text-green-400 flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5" />
+                        {nextBus.incharge_contact || "—"}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {routeBuses.length > 2 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  +{routeBuses.length - 2} more bus(es) on this route
+                </p>
+              )}
+
+              {routeBuses.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No bus information available for this route.</p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Bus Missed Button */}
         <motion.div {...cardAnim} transition={{ delay: 0.28 }}>
