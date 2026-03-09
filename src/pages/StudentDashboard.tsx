@@ -70,6 +70,26 @@ const StudentDashboard = () => {
     }
   }, [navigate]);
 
+  // Play beep sound using Web Audio API
+  const playBeep = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.frequency.value = 880;
+      oscillator.type = "sine";
+      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      console.log("Audio not supported");
+    }
+  };
+
   // Real-time driver location from Supabase
   useEffect(() => {
     if (!route) return;
@@ -93,7 +113,22 @@ const StudentDashboard = () => {
       .channel(`driver-${route.id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "driver_locations", filter: `route_id=eq.${route.id}` },
+        { event: "INSERT", schema: "public", table: "driver_locations", filter: `route_id=eq.${route.id}` },
+        (payload) => {
+          // Driver started the trip - play beep notification
+          playBeep();
+          toast({
+            title: "🚌 Bus Started!",
+            description: "Your bus has started its trip. Track it on the map!",
+          });
+          if (payload.new && typeof payload.new === "object" && "lat" in payload.new) {
+            updateBusFromDriverData(payload.new as any);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "driver_locations", filter: `route_id=eq.${route.id}` },
         (payload) => {
           if (payload.new && typeof payload.new === "object" && "lat" in payload.new) {
             updateBusFromDriverData(payload.new as any);
@@ -105,7 +140,7 @@ const StudentDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [route]);
+  }, [route, toast]);
 
   const updateBusFromDriverData = (loc: { lat: number; lng: number; speed: number; status: string }) => {
     setBus((prev) => {
