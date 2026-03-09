@@ -125,11 +125,25 @@ const DriverDashboard = () => {
     setMissedStudents((prev) => prev.filter((s) => s.id !== id));
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!selectedRoute) {
       toast({ title: "Select a route first", variant: "destructive" });
       return;
     }
+    // Delete existing record so students get a fresh INSERT event (triggers beep)
+    await supabase.from("driver_locations").delete().eq("route_id", selectedRoute.id);
+    
+    // Insert new record with "started" status - this triggers student notifications
+    const initialLoc = selectedRoute.stops[0];
+    await supabase.from("driver_locations").insert({
+      route_id: selectedRoute.id,
+      lat: initialLoc.lat,
+      lng: initialLoc.lng,
+      speed: 0,
+      status: "started",
+      updated_at: new Date().toISOString(),
+    });
+    
     setTripStatus("active");
     setElapsed(0);
     toast({ title: "Trip Started", description: `Route: ${selectedRoute.name}` });
